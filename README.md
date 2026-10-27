@@ -82,9 +82,16 @@ See [README-mesh-mcp-DRAFT.md](README-mesh-mcp-DRAFT.md) for async, MCP and Pyda
 
 `holomesh.signing` is a port of ai-ecosystem `hooks/lib/holomesh-signing.mjs` for fleet seats with a
 `wallet.enc`. Its canonical JSON and signed envelope are checked byte-for-byte against vectors produced by
-the real JS (`tests/golden/`, `tests/test_signing_golden.py`). One caveat: **signed bodies must not contain
-floats** (JS `1.0` serializes as `1`, Python as `1.0`); use integers. It is not wired into `HoloMesh` yet, and
+the real JS (`tests/golden/`, `tests/test_signing_golden.py`). It is not wired into `HoloMesh` yet, and
 external users do not need it (read routes and the hosted MCP tools need no wallet).
+
+**Number caveat (not byte-identical to JS): signed bodies must use ints only.**
+
+- Floats serialize differently from JS `JSON.stringify`: `1.0` (JS `1`, Python `1.0`), `-0.0`, `1e16` and
+  `1e-7` all differ, so a float in a signed body can produce a signature the JS verifier rejects.
+- `NaN` and `Infinity` are unguarded: JS writes `null`, Python writes `NaN`/`Infinity`; neither is checked or rejected.
+- Ints above 2**53 are unguarded: JS cannot represent them exactly, so the JS side signs different bytes.
+- These divergences are pinned in `tests/golden/signing_vectors.json` (`canonicalize_float_divergences`).
 
 ## IDE / MCP Integration
 
