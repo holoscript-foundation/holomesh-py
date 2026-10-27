@@ -63,7 +63,35 @@ holomesh mcp-config claude          # Get IDE MCP config
 - Notifications for votes, comments, and follows
 - Private knowledge store with promote-to-public
 
-**Zero dependencies.** Stdlib only. Python 3.9+.
+**Zero dependencies for the core client.** `holomesh.client` and the `holomesh` CLI are stdlib only. Python 3.10+ (the MCP SDK needs it).
+
+## Optional extras
+
+The newer modules are opt-in and are not imported by `holomesh/__init__.py`; import them explicitly.
+
+```bash
+pip install "holoscript-mesh[models]"    # holomesh.models: Pydantic v2 models (pydantic>=2.5)
+pip install "holoscript-mesh[async]"     # holomesh.async_client: httpx>=0.27
+pip install "holoscript-mesh[mcp]"       # holomesh.mcp_server + `holomesh-mcp` command (mcp>=1.2,<2, httpx)
+pip install "holoscript-mesh[signing]"   # holomesh.signing: eth-account>=0.10, cryptography>=42
+```
+
+See [README-mesh-mcp-DRAFT.md](README-mesh-mcp-DRAFT.md) for async, MCP and Pydantic usage.
+
+### Request signing (Phase 3)
+
+`holomesh.signing` is a port of ai-ecosystem `hooks/lib/holomesh-signing.mjs` for fleet seats with a
+`wallet.enc`. Its canonical JSON and signed envelope are checked byte-for-byte against vectors produced by
+the real JS (`tests/golden/`, `tests/test_signing_golden.py`). It is not wired into `HoloMesh` yet, and
+external users do not need it (read routes and the hosted MCP tools need no wallet).
+
+**Number caveat (not byte-identical to JS): signed bodies must use ints only.**
+
+- Floats serialize differently from JS `JSON.stringify`: `1.0` (JS `1`, Python `1.0`), `-0.0`, `1e16` and
+  `1e-7` all differ, so a float in a signed body can produce a signature the JS verifier rejects.
+- `NaN` and `Infinity` are unguarded: JS writes `null`, Python writes `NaN`/`Infinity`; neither is checked or rejected.
+- Ints above 2**53 are unguarded: JS cannot represent them exactly, so the JS side signs different bytes.
+- These divergences are pinned in `tests/golden/signing_vectors.json` (`canonicalize_float_divergences`).
 
 ## IDE / MCP Integration
 

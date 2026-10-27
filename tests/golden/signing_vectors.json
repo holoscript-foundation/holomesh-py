@@ -1,0 +1,396 @@
+{
+  "schema": "holomesh-py.signing-golden/v1",
+  "generated_by": "tests/golden/gen_vectors.mjs",
+  "source": {
+    "file": "hooks/lib/holomesh-signing.mjs",
+    "sha256": "313931c94c0c91bd3c7f8b14b604259f2c93bf2d677e13d36a22fc8469bc0140",
+    "ai_ecosystem_commit": "94772097ce30e60fcfbb1847e68ff37f5fffe8ea",
+    "node": "v24.21.0"
+  },
+  "test_key": {
+    "note": "TEST-ONLY dummy key material, rebuilt by formula in the Python test, never a real seat.",
+    "private_key_formula": "0x + 00*31 + 01",
+    "master_key_formula": "32 bytes of 0x42",
+    "iv_formula": "12 bytes of 0x07",
+    "seat_id": "claude-test-00000000-default-x402",
+    "wallet_enc": {
+      "address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+      "encrypted_privkey": {
+        "alg": "aes-256-gcm",
+        "iv": "BwcHBwcHBwcHBwcH",
+        "ct": "SJptnIXBQssTZNwA7WsWTMVqPw3N5Xh1UEQPYyodKEQf2CrgRINFfXfGdbjqr1Bltl+PGRzpzXGwNWUeIigV+FCk",
+        "tag": "eHusMN1txexoN7Dj2sswOQ=="
+      }
+    }
+  },
+  "canonicalize": [
+    {
+      "name": "empty-object",
+      "input_json": "{}",
+      "expected": "{}"
+    },
+    {
+      "name": "empty-array",
+      "input_json": "[]",
+      "expected": "[]"
+    },
+    {
+      "name": "null",
+      "input_json": "null",
+      "expected": "null"
+    },
+    {
+      "name": "true",
+      "input_json": "true",
+      "expected": "true"
+    },
+    {
+      "name": "false",
+      "input_json": "false",
+      "expected": "false"
+    },
+    {
+      "name": "string-plain",
+      "input_json": "\"hello\"",
+      "expected": "\"hello\""
+    },
+    {
+      "name": "string-empty",
+      "input_json": "\"\"",
+      "expected": "\"\""
+    },
+    {
+      "name": "int-zero",
+      "input_json": "0",
+      "expected": "0"
+    },
+    {
+      "name": "int-negative",
+      "input_json": "-17",
+      "expected": "-17"
+    },
+    {
+      "name": "int-max-safe",
+      "input_json": "9007199254740991",
+      "expected": "9007199254740991"
+    },
+    {
+      "name": "int-min-safe",
+      "input_json": "-9007199254740991",
+      "expected": "-9007199254740991"
+    },
+    {
+      "name": "int-negative-zero-text",
+      "input_json": "-0",
+      "expected": "0"
+    },
+    {
+      "name": "key-order-simple",
+      "input_json": "{\"b\":1,\"a\":2,\"c\":3}",
+      "expected": "{\"a\":2,\"b\":1,\"c\":3}"
+    },
+    {
+      "name": "key-order-case-and-digits",
+      "input_json": "{\"b\":1,\"a\":2,\"B\":3,\"_\":4,\"10\":5,\"9\":6,\"A\":7,\"1\":8}",
+      "expected": "{\"1\":8,\"10\":5,\"9\":6,\"A\":7,\"B\":3,\"_\":4,\"a\":2,\"b\":1}"
+    },
+    {
+      "name": "key-order-nested",
+      "input_json": "{\"z\":{\"y\":1,\"x\":{\"w\":2,\"v\":3}},\"a\":[{\"d\":1,\"c\":2},{\"b\":3,\"a\":4}]}",
+      "expected": "{\"a\":[{\"c\":2,\"d\":1},{\"a\":4,\"b\":3}],\"z\":{\"x\":{\"v\":3,\"w\":2},\"y\":1}}"
+    },
+    {
+      "name": "array-order-preserved",
+      "input_json": "[3,1,2,{\"b\":1,\"a\":2},[9,8]]",
+      "expected": "[3,1,2,{\"a\":2,\"b\":1},[9,8]]"
+    },
+    {
+      "name": "nested-deep",
+      "input_json": "{\"a\":{\"b\":{\"c\":{\"d\":{\"e\":[1,[2,[3,[4]]]]}}}}}",
+      "expected": "{\"a\":{\"b\":{\"c\":{\"d\":{\"e\":[1,[2,[3,[4]]]]}}}}}"
+    },
+    {
+      "name": "mixed-types",
+      "input_json": "{\"s\":\"x\",\"n\":1,\"b\":true,\"z\":null,\"l\":[],\"o\":{}}",
+      "expected": "{\"b\":true,\"l\":[],\"n\":1,\"o\":{},\"s\":\"x\",\"z\":null}"
+    },
+    {
+      "name": "unicode-latin",
+      "input_json": "{\"k\":\"h\\u00e9llo w\\u00f6rld\",\"\\u00e9\":1}",
+      "expected": "{\"k\":\"héllo wörld\",\"é\":1}"
+    },
+    {
+      "name": "unicode-cjk",
+      "input_json": "{\"\\u540d\\u524d\":\"\\u30c6\\u30b9\\u30c8\",\"msg\":\"\\u4f60\\u597d\"}",
+      "expected": "{\"msg\":\"你好\",\"名前\":\"テスト\"}"
+    },
+    {
+      "name": "unicode-emoji-astral",
+      "input_json": "{\"e\":\"\\ud83d\\ude00 ok \\ud83d\\udc4d\"}",
+      "expected": "{\"e\":\"😀 ok 👍\"}"
+    },
+    {
+      "name": "unicode-combining",
+      "input_json": "{\"e\":\"e\\u0301\",\"f\":\"\\u00e9\"}",
+      "expected": "{\"e\":\"é\",\"f\":\"é\"}"
+    },
+    {
+      "name": "unicode-rtl",
+      "input_json": "{\"a\":\"\\u05e9\\u05dc\\u05d5\\u05dd \\u0645\\u0631\\u062d\\u0628\\u0627\"}",
+      "expected": "{\"a\":\"שלום مرحبا\"}"
+    },
+    {
+      "name": "unicode-key-order-bmp-vs-astral",
+      "input_json": "{\"\\uffff\":1,\"\\ud83d\\ude00\":2,\"\\ue000\":3,\"a\":4}",
+      "expected": "{\"a\":4,\"😀\":2,\"\":3,\"￿\":1}"
+    },
+    {
+      "name": "unicode-key-order-astral-pair",
+      "input_json": "{\"\\ud83d\\ude00\":1,\"\\ud83c\\udf00\":2,\"\\uff5e\":3}",
+      "expected": "{\"🌀\":2,\"😀\":1,\"～\":3}"
+    },
+    {
+      "name": "unicode-lone-surrogate-value",
+      "input_json": "{\"v\":\"a\\ud800b\"}",
+      "expected": "{\"v\":\"a\\ud800b\"}"
+    },
+    {
+      "name": "unicode-lone-surrogate-key",
+      "input_json": "{\"\\udc00k\":1}",
+      "expected": "{\"\\udc00k\":1}"
+    },
+    {
+      "name": "unicode-line-separators",
+      "input_json": "{\"v\":\"a\\u2028b\\u2029c\"}",
+      "expected": "{\"v\":\"a b c\"}"
+    },
+    {
+      "name": "escapes-quote-backslash",
+      "input_json": "{\"v\":\"say \\\"hi\\\" \\\\ path\\\\to\"}",
+      "expected": "{\"v\":\"say \\\"hi\\\" \\\\ path\\\\to\"}"
+    },
+    {
+      "name": "escapes-control-named",
+      "input_json": "{\"v\":\"a\\nb\\tc\\rd\\be\\ff\"}",
+      "expected": "{\"v\":\"a\\nb\\tc\\rd\\be\\ff\"}"
+    },
+    {
+      "name": "escapes-control-unnamed",
+      "input_json": "{\"v\":\"\\u0000\\u0001\\u001f\\u007f\"}",
+      "expected": "{\"v\":\"\\u0000\\u0001\\u001f\"}"
+    },
+    {
+      "name": "escapes-slash",
+      "input_json": "{\"v\":\"a/b</script>\"}",
+      "expected": "{\"v\":\"a/b</script>\"}"
+    },
+    {
+      "name": "key-needs-escape",
+      "input_json": "{\"a\\\"b\":1,\"c\\\\d\":2,\"e\\nf\":3}",
+      "expected": "{\"a\\\"b\":1,\"c\\\\d\":2,\"e\\nf\":3}"
+    },
+    {
+      "name": "float-fractional-same",
+      "input_json": "{\"a\":0.5,\"b\":-2.25,\"c\":1.5}",
+      "expected": "{\"a\":0.5,\"b\":-2.25,\"c\":1.5}"
+    },
+    {
+      "name": "float-exp-1e21-same-format",
+      "input_json": "{\"a\":1e21}",
+      "expected": "{\"a\":1e+21}"
+    },
+    {
+      "name": "float-fractional-0.1",
+      "input_json": "{\"a\":0.1,\"b\":123456.789}",
+      "expected": "{\"a\":0.1,\"b\":123456.789}"
+    },
+    {
+      "name": "signed-payload-shape",
+      "input_json": "{\"body\":{\"task\":\"t1\",\"tags\":[\"x\",\"y\"],\"n\":3},\"nonce\":\"00112233445566778899aabbccddeeff\",\"timestamp\":\"2026-01-02T03:04:05.006Z\"}",
+      "expected": "{\"body\":{\"n\":3,\"tags\":[\"x\",\"y\"],\"task\":\"t1\"},\"nonce\":\"00112233445566778899aabbccddeeff\",\"timestamp\":\"2026-01-02T03:04:05.006Z\"}"
+    }
+  ],
+  "canonicalize_float_divergences": [
+    {
+      "name": "float-integral-1.0",
+      "input_json": "{\"a\":1.0}",
+      "expected": "{\"a\":1}"
+    },
+    {
+      "name": "float-integral-100.0",
+      "input_json": "{\"a\":100.0}",
+      "expected": "{\"a\":100}"
+    },
+    {
+      "name": "float-neg-zero",
+      "input_json": "{\"a\":-0.0}",
+      "expected": "{\"a\":0}"
+    },
+    {
+      "name": "float-1e16",
+      "input_json": "{\"a\":1e16}",
+      "expected": "{\"a\":10000000000000000}"
+    },
+    {
+      "name": "float-small-1e-7",
+      "input_json": "{\"a\":1e-7}",
+      "expected": "{\"a\":1e-7}"
+    },
+    {
+      "name": "float-exp-notation-1E2",
+      "input_json": "{\"a\":1E2}",
+      "expected": "{\"a\":100}"
+    }
+  ],
+  "envelopes": [
+    {
+      "name": "simple",
+      "body_json": "{\"task\":\"t1\",\"n\":3}",
+      "nonce": "00112233445566778899aabbccddeeff",
+      "now_ms": 1700000000123,
+      "envelope": {
+        "body": {
+          "task": "t1",
+          "n": 3
+        },
+        "signature": "0x3ba1a373aeec18da8c0c69885ba1091044cc9700f75f2a1f3a3d8e4e7bc93c3b66285b6606b9e7fbc7a9bfd2c8c9cb304d090ebc7e1e207a0c5a570e34349d641c",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "timestamp": "2023-11-14T22:13:20.123Z"
+      }
+    },
+    {
+      "name": "epoch-zero",
+      "body_json": "{\"a\":1}",
+      "nonce": "ffeeddccbbaa99887766554433221100",
+      "now_ms": 0,
+      "envelope": {
+        "body": {
+          "a": 1
+        },
+        "signature": "0x52d7a44b35c3070b166ee43086275c84d5b973d9091059da3a5163defd63111f5715dc40ca3c01f3e9a8c457fecfa1a2fc1c61061a24c09139fe3ae9787d299f1b",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "ffeeddccbbaa99887766554433221100",
+        "timestamp": "1970-01-01T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "one-ms",
+      "body_json": "{\"a\":1}",
+      "nonce": "0102030405060708090a0b0c0d0e0f10",
+      "now_ms": 1,
+      "envelope": {
+        "body": {
+          "a": 1
+        },
+        "signature": "0x5a57a555934bbad1fcc5529ee44b7b49a25e3b55037ef900fda7646bc82bcffa0d5a856070d52c5e15ef6963b7531b7ce388c80c734873f91d4c9211d368a4271b",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "0102030405060708090a0b0c0d0e0f10",
+        "timestamp": "1970-01-01T00:00:00.001Z"
+      }
+    },
+    {
+      "name": "ms-999",
+      "body_json": "{\"a\":1}",
+      "nonce": "1111111111111111aaaaaaaaaaaaaaaa",
+      "now_ms": 1700000000999,
+      "envelope": {
+        "body": {
+          "a": 1
+        },
+        "signature": "0x91aee23f794f5429d235dfd3dfc94d4594e1dfd1cb318a0270401a13ab36fd085e5b8d45e7472ac357c557cf47f368c940d71be0c2bea90ad1d3ff72db206ad11c",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "1111111111111111aaaaaaaaaaaaaaaa",
+        "timestamp": "2023-11-14T22:13:20.999Z"
+      }
+    },
+    {
+      "name": "whole-second",
+      "body_json": "{\"a\":1}",
+      "nonce": "2222222222222222bbbbbbbbbbbbbbbb",
+      "now_ms": 1700000001000,
+      "envelope": {
+        "body": {
+          "a": 1
+        },
+        "signature": "0xee830a07186c4158aa9d57d768d83579736457c563e7ab3cc4976c57119c45d2547bdef1dd912373fa05b65fb6bf866e8e89bade98254473dcc87adfcc53f4021b",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "2222222222222222bbbbbbbbbbbbbbbb",
+        "timestamp": "2023-11-14T22:13:21.000Z"
+      }
+    },
+    {
+      "name": "year-2099",
+      "body_json": "{\"a\":1}",
+      "nonce": "3333333333333333cccccccccccccccc",
+      "now_ms": 4070908800000,
+      "envelope": {
+        "body": {
+          "a": 1
+        },
+        "signature": "0xb67872a136958dc80562d1580395942364314db6f810714fa5cff03e30d9ed56450f813a4d081b0e38ad12a467ede900ea7491c82292c2b1fb395b1150a24b121c",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "3333333333333333cccccccccccccccc",
+        "timestamp": "2099-01-01T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "nested-unicode",
+      "body_json": "{\"title\":\"héllo 名前 😀\",\"tags\":[\"b\",\"a\"],\"meta\":{\"z\":1,\"y\":[{\"d\":1,\"c\":2}]}}",
+      "nonce": "4444444444444444dddddddddddddddd",
+      "now_ms": 1789000000321,
+      "envelope": {
+        "body": {
+          "title": "héllo 名前 😀",
+          "tags": [
+            "b",
+            "a"
+          ],
+          "meta": {
+            "z": 1,
+            "y": [
+              {
+                "d": 1,
+                "c": 2
+              }
+            ]
+          }
+        },
+        "signature": "0x079520f073b2615f82ec20dbe5ce486458384db613aba15087ae4a54ee9569bb3aaeb6fbb1e83e6130ff253a3fb138bdfa6d8224951402c1b01327975c5f45ef1b",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "4444444444444444dddddddddddddddd",
+        "timestamp": "2026-09-10T00:26:40.321Z"
+      }
+    },
+    {
+      "name": "key-order-astral",
+      "body_json": "{\"￿\":1,\"😀\":2,\"a\":3}",
+      "nonce": "5555555555555555eeeeeeeeeeeeeeee",
+      "now_ms": 1790000000456,
+      "envelope": {
+        "body": {
+          "￿": 1,
+          "😀": 2,
+          "a": 3
+        },
+        "signature": "0xf4d68f2d6a577bc0058431ce2547b949b006da0ef42590cbcf4766eb8429379f6e80e87fde8e95c4dca06b926f486c19eba480cfb3b11727fe71ccf717d7b2ff1c",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "5555555555555555eeeeeeeeeeeeeeee",
+        "timestamp": "2026-09-21T14:13:20.456Z"
+      }
+    },
+    {
+      "name": "empty-body",
+      "body_json": "{}",
+      "nonce": "66666666666666660000000000000000",
+      "now_ms": 1791000000789,
+      "envelope": {
+        "body": {},
+        "signature": "0xf9ac08e61f4ce441f32ee4ef1910de4a0c3d998440ee07ae2a1311b0fc722a44463531af7c0f04d3eb7afb26147e2f474609fad368d48841bc894db134bf35b61b",
+        "signer_address": "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf",
+        "nonce": "66666666666666660000000000000000",
+        "timestamp": "2026-10-03T04:00:00.789Z"
+      }
+    }
+  ]
+}
