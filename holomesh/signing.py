@@ -23,6 +23,15 @@ WRAP forever, never rebuild. eth-account/cryptography are the wrap.
 Seat wallets live at ~/.ai-ecosystem/seats/<seat_id>/wallet.enc encrypted
 with ~/.ai-ecosystem/seats/.master-key (AES-256-GCM). Seat id convention:
 `claude-<surface>-<fp8>-default-x402` with fp8 = sha256(hostname+homedir)[:8].
+Seat directory: the JS side resolves `<ai-ecosystem root>/seats` (AI_ECOSYSTEM_DIR /
+AI_ECOSYSTEM_ROOT, else derived from its own location); this port defaults to
+`~/.ai-ecosystem/seats` (fine where that path is the ecosystem root or a junction to
+it) and honors only HOLOMESH_SEATS_DIR_OVERRIDE, so set that on machines where they differ.
+
+Byte-identity with the JS canonicalization and signed envelope is pinned by golden
+vectors (tests/golden/, tests/test_signing_golden.py). Known gap: floats (see
+canonicalize_body).
+
 External (non-fleet) users won't have seats — they use read routes plus the
 hosted MCP tools instead; see README.
 """

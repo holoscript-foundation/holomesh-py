@@ -1,9 +1,13 @@
 # DRAFT README section — Python-native HoloMesh client (MCP-first)
 
-> SCAFFOLD 2026-07-16, python-competitor NMoS bridge task. This is a DRAFT
-> section for the integrating agent to merge into `README.md` once the new
-> modules (`models.py`, `async_client.py`, `signing.py`, `mcp_server.py`) are
-> wired into `__init__.py` and `pyproject.toml`. Delete this file after merge.
+> SCAFFOLD 2026-07-16, python-competitor NMoS bridge task. DRAFT usage notes for
+> the new modules (`models.py`, `async_client.py`, `signing.py`, `mcp_server.py`).
+> The `[models]`, `[async]`, `[mcp]` and `[signing]` extras and the `holomesh-mcp`
+> command are declared in `pyproject.toml`; the modules are still intentionally
+> NOT imported by `__init__.py` (import them explicitly). The pip commands below
+> work only once a release carrying these extras is published (0.1.0 on PyPI has
+> none); until then install from a checkout: `pip install -e ".[mcp]"`.
+> Fold into `README.md` and delete this file when the modules are wired.
 
 ## Typed models, async client, MCP server
 

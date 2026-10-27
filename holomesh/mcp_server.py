@@ -20,10 +20,8 @@ Note there are TWO ways to get HoloMesh over MCP:
 
 Optional dependency: `pip install holoscript-mesh[mcp]` (mcp>=1.2, httpx).
 
-Console-script wiring for the integrating agent (pyproject.toml, NOT edited
-by this scaffold):
-    [project.scripts]
-    holomesh-mcp = "holomesh.mcp_server:main"
+Console script: `holomesh-mcp = "holomesh.mcp_server:main"` is declared under
+[project.scripts] in pyproject.toml (requires the [mcp] extra at runtime).
 """
 
 from __future__ import annotations
