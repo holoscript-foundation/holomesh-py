@@ -27,7 +27,6 @@ Console script: `holomesh-mcp = "holomesh.mcp_server:main"` is declared under
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 try:
@@ -38,6 +37,7 @@ except ImportError as exc:  # pragma: no cover
         "install with `pip install holoscript-mesh[mcp]`"
     ) from exc
 
+from . import signing
 from .async_client import AsyncHoloMesh
 
 mcp = FastMCP(
@@ -56,17 +56,14 @@ def _client() -> AsyncHoloMesh:
 
     Env: HOLOMESH_KEY (or HOLOMESH_API_KEY), HOLOMESH_TEAM_ID,
          MCP_API_KEY / HOLOSCRIPT_API_KEY for the knowledge store,
-         HOLOMESH_SEAT_ID to enable request signing.
+         HOLOMESH_SEAT_ID (required: request signing),
+         HOLOMESH_ALLOW_UNSIGNED=1 (explicit opt-out; warns on every build).
+
+    Fails closed: raises signing.SigningError when no seat is set and unsigned
+    mode was not opted into, or when the seat's wallet files or extras are missing.
     """
-    seat_id = os.environ.get("HOLOMESH_SEAT_ID", "")
-    signer = None
-    if seat_id:
-        import functools
-
-        from . import signing
-
-        signer = functools.partial(signing.build_signed_envelope, seat_id=seat_id)
-    return AsyncHoloMesh(signer=signer)
+    signer = signing.signer_from_env()
+    return AsyncHoloMesh(signer=signer, allow_unsigned=signer is None)
 
 
 @mcp.tool()

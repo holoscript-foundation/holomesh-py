@@ -21,6 +21,8 @@ Two-host architecture (probed live 2026-07-16):
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 from typing import Any, Callable, Optional
 
@@ -40,10 +42,36 @@ KNOWLEDGE_BASE = os.environ.get(
     "https://mcp-orchestrator-production-45f9.up.railway.app",
 )
 
+from .signing import SigningError
+
+_log = logging.getLogger("holomesh.async_client")
+
 # A signer takes the raw request body and returns the signed envelope dict.
-# Wire holomesh.signing.build_signed_envelope via functools.partial, or pass
-# None to send unsigned (read routes; grace-period servers).
+# Wire holomesh.signing.build_signed_envelope via functools.partial (or use
+# holomesh.signing.signer_from_env). Without a signer, POST/PATCH is refused unless
+# allow_unsigned=True or HOLOMESH_ALLOW_UNSIGNED=1 (read routes; grace-mode servers).
 Signer = Callable[[dict], dict]
+_ENVELOPE_KEYS = ("body", "signature", "signer_address", "nonce", "timestamp")
+
+
+def _check_envelope(payload: Any, body: dict, method: str, path: str) -> None:
+    def bad(why: str) -> SigningError:
+        return SigningError(f"{method} {path}: signer returned {why}; request not sent")
+
+    if not isinstance(payload, dict):
+        raise bad(f"a {type(payload).__name__}, not an envelope dict")
+    missing = [k for k in _ENVELOPE_KEYS if k not in payload]
+    if missing:
+        raise bad(f"an envelope missing {missing}")
+    if payload["body"] != body:
+        raise bad("an envelope whose body differs from the request body")
+    sig, addr = payload["signature"], payload["signer_address"]
+    if not (isinstance(sig, str) and sig.startswith("0x") and len(sig) == 132):
+        raise bad("a malformed signature (expected 0x + 65 bytes hex)")
+    if not (isinstance(addr, str) and addr.startswith("0x") and len(addr) == 42):
+        raise bad("a malformed signer_address")
+    if not isinstance(payload["nonce"], str) or not isinstance(payload["timestamp"], str):
+        raise bad("a non-string nonce or timestamp")
 
 
 class AsyncHoloMesh:
@@ -65,6 +93,7 @@ class AsyncHoloMesh:
         knowledge_api_keys: list[str] | None = None,
         signer: Optional[Signer] = None,
         timeout: float = 20.0,
+        allow_unsigned: Optional[bool] = None,
     ) -> None:
         self.api_key = api_key or os.environ.get("HOLOMESH_KEY") or os.environ.get(
             "HOLOMESH_API_KEY", ""
@@ -82,6 +111,15 @@ class AsyncHoloMesh:
             if k
         ]
         self.signer = signer
+        if allow_unsigned is None:
+            allow_unsigned = os.environ.get("HOLOMESH_ALLOW_UNSIGNED") == "1"
+        self.allow_unsigned = bool(allow_unsigned)
+        if self.signer is None and self.allow_unsigned:
+            _log.warning(
+                "HoloMesh client built in UNSIGNED mode (HOLOMESH_ALLOW_UNSIGNED): "
+                "POST/PATCH bodies are sent without a signature; mutating routes "
+                "reject them unless the server runs in grace mode"
+            )
         self._client = httpx.AsyncClient(timeout=timeout)
 
     async def __aenter__(self) -> "AsyncHoloMesh":
@@ -106,13 +144,31 @@ class AsyncHoloMesh:
         return r.json()
 
     async def _send(self, method: str, path: str, body: dict) -> dict:
-        """POST/PATCH with optional Phase 3 signing.
+        """POST/PATCH with Phase 3 signing. Fails closed.
 
-        If a signer is configured the body is wrapped in the signed envelope;
-        on 401 signing-rejected without a signer, the error surfaces with a
-        pointer to holomesh.signing.
+        With a signer, the body is wrapped in the signed envelope (signer runs in a
+        worker thread: it decrypts and signs). Any signer error, or an envelope
+        that is malformed or does not carry this exact body, raises SigningError
+        and nothing is sent. Without a signer the request is refused unless
+        unsigned mode was opted into (allow_unsigned / HOLOMESH_ALLOW_UNSIGNED=1).
         """
-        payload = self.signer(body) if self.signer else body
+        if self.signer is not None:
+            try:
+                payload = await asyncio.to_thread(self.signer, body)
+            except Exception as exc:
+                raise SigningError(
+                    f"{method} {path}: signer failed ({type(exc).__name__}); "
+                    "request not sent"
+                ) from exc
+            _check_envelope(payload, body, method, path)
+        elif self.allow_unsigned:
+            payload = body
+        else:
+            raise SigningError(
+                f"{method} {path}: no signer configured; refusing to send unsigned. "
+                "Pass signer=holomesh.signing.signer_from_env() (HOLOMESH_SEAT_ID), "
+                "or set HOLOMESH_ALLOW_UNSIGNED=1 to send unsigned on purpose."
+            )
         r = await self._client.request(
             method, f"{self.base_url}{path}", headers=self._headers(), json=payload
         )

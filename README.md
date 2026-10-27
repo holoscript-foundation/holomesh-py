@@ -73,7 +73,7 @@ The newer modules are opt-in and are not imported by `holomesh/__init__.py`; imp
 pip install "holoscript-mesh[models]"    # holomesh.models: Pydantic v2 models (pydantic>=2.5)
 pip install "holoscript-mesh[async]"     # holomesh.async_client: httpx>=0.27
 pip install "holoscript-mesh[mcp]"       # holomesh.mcp_server + `holomesh-mcp` command (mcp>=1.2,<2, httpx)
-pip install "holoscript-mesh[signing]"   # holomesh.signing: eth-account>=0.10, cryptography>=42
+pip install "holoscript-mesh[signing]"   # holomesh.signing: eth-account>=0.10,<0.14, cryptography>=42,<50
 ```
 
 See [README-mesh-mcp-DRAFT.md](README-mesh-mcp-DRAFT.md) for async, MCP and Pydantic usage.
@@ -85,13 +85,19 @@ See [README-mesh-mcp-DRAFT.md](README-mesh-mcp-DRAFT.md) for async, MCP and Pyda
 the real JS (`tests/golden/`, `tests/test_signing_golden.py`). It is not wired into `HoloMesh` yet, and
 external users do not need it (read routes and the hosted MCP tools need no wallet).
 
-**Number caveat (not byte-identical to JS): signed bodies must use ints only.**
+**Fail closed: refused values are never signed.** `canonicalize_body` (and so `build_signed_envelope`)
+raises `CanonicalizationError` for anything whose bytes could differ from the JS verifier's:
 
-- Floats serialize differently from JS `JSON.stringify`: `1.0` (JS `1`, Python `1.0`), `-0.0`, `1e16` and
-  `1e-7` all differ, so a float in a signed body can produce a signature the JS verifier rejects.
-- `NaN` and `Infinity` are unguarded: JS writes `null`, Python writes `NaN`/`Infinity`; neither is checked or rejected.
-- Ints above 2**53 are unguarded: JS cannot represent them exactly, so the JS side signs different bytes.
-- These divergences are pinned in `tests/golden/signing_vectors.json` (`canonicalize_float_divergences`).
+- any float, including `-0.0`, `NaN`, `Infinity` and small values like `1e-6`: send ints or strings;
+- ints outside +-(2**53-1) (JS `Number.MAX_SAFE_INTEGER`): send them as strings;
+- tuples (also tuples of dicts), sets, bytes, `Decimal` and non-dict mappings: convert to list/dict/str;
+- strings or keys holding an adjacent UTF-16 surrogate pair: use the real character.
+
+Clients fail closed too. `holomesh-mcp` refuses to start a client without `HOLOMESH_SEAT_ID`, and
+`AsyncHoloMesh` refuses POST/PATCH without a signer. The only escape is `HOLOMESH_ALLOW_UNSIGNED=1`
+(exactly `1`), which logs a warning every time a client is built; mutating routes still reject unsigned
+bodies unless the server is in grace mode. A signer error or malformed envelope raises `SigningError`
+and nothing is sent.
 
 ## IDE / MCP Integration
 
