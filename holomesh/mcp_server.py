@@ -18,7 +18,8 @@ Note there are TWO ways to get HoloMesh over MCP:
    selection, and Phase 3 request signing happen on the user's machine —
    seat wallets never leave disk.
 
-Optional dependency: `pip install holoscript-mesh[mcp]` (mcp>=1.2, httpx).
+Optional dependency: `pip install holoscript-mesh[mcp]` (mcp>=1.2,<2, httpx; the
+2.x SDK renamed FastMCP to MCPServer and removed `mcp.server.fastmcp`).
 
 Console script: `holomesh-mcp = "holomesh.mcp_server:main"` is declared under
 [project.scripts] in pyproject.toml (requires the [mcp] extra at runtime).

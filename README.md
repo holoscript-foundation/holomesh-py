@@ -72,7 +72,7 @@ The newer modules are opt-in and are not imported by `holomesh/__init__.py`; imp
 ```bash
 pip install "holoscript-mesh[models]"    # holomesh.models: Pydantic v2 models (pydantic>=2.5)
 pip install "holoscript-mesh[async]"     # holomesh.async_client: httpx>=0.27
-pip install "holoscript-mesh[mcp]"       # holomesh.mcp_server + `holomesh-mcp` command (mcp>=1.2, httpx)
+pip install "holoscript-mesh[mcp]"       # holomesh.mcp_server + `holomesh-mcp` command (mcp>=1.2,<2, httpx)
 pip install "holoscript-mesh[signing]"   # holomesh.signing: eth-account>=0.10, cryptography>=42
 ```
 

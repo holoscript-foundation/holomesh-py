@@ -31,7 +31,7 @@ classifiers = [
 [project.optional-dependencies]
 models = ["pydantic>=2.5"]                          # holomesh.models
 async = ["httpx>=0.27"]                             # holomesh.async_client
-mcp = ["mcp>=1.2", "httpx>=0.27"]                   # holomesh.mcp_server (FastMCP + AsyncHoloMesh)
+mcp = ["mcp>=1.2,<2", "httpx>=0.27"]                # holomesh.mcp_server (FastMCP + AsyncHoloMesh); mcp 2.x removed mcp.server.fastmcp
 signing = ["eth-account>=0.10", "cryptography>=42"]  # holomesh.signing (EIP-191 + wallet.enc AES-GCM)
 
 [project.urls]
