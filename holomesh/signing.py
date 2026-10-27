@@ -33,6 +33,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import socket
 import time
 from pathlib import Path
@@ -50,26 +51,57 @@ def machine_fingerprint() -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:8]
 
 
+_LONE_SURROGATE = re.compile("[\ud800-\udfff]")
+
+
+def _escape_lone_surrogates(encoded: str) -> str:
+    """JS JSON.stringify is well-formed: a lone UTF-16 surrogate is emitted as a
+    lowercase \\udXXX escape. Python (ensure_ascii=False) would emit the raw code
+    point, which cannot be UTF-8 encoded for signing. Python str code points in
+    D800-DFFF are always unpaired, so escape every one of them."""
+    return _LONE_SURROGATE.sub(lambda m: "\\u%04x" % ord(m.group()), encoded)
+
+
+def _dumps_scalar(obj: Any) -> str:
+    out = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+    return _escape_lone_surrogates(out) if isinstance(obj, str) else out
+
+
+def _utf16_key(key: str) -> bytes:
+    """JS Array.prototype.sort() with no comparator orders strings by UTF-16 code
+    unit; Python orders by code point. They differ when an astral character
+    (surrogate pair, D800-DBFF first) meets a BMP character in E000-FFFF. UTF-16-BE
+    bytes compare in code-unit order, so they reproduce the JS ordering."""
+    if not isinstance(key, str):
+        raise TypeError(f"canonicalize_body object keys must be str, got {type(key).__name__}")
+    return key.encode("utf-16-be", "surrogatepass")
+
+
 def canonicalize_body(obj: Any) -> str:
     """Deterministic JSON: sorted keys at every level, no whitespace.
 
     Must produce byte-identical output to holomesh-signing.mjs
-    canonicalizeBody (JS JSON.stringify semantics):
+    canonicalizeBody (JS JSON.stringify semantics). Verified against golden
+    vectors generated from the real JS (tests/golden/, tests/test_signing_golden.py):
     - ensure_ascii=False (JS leaves non-ASCII literal)
     - separators without spaces
-    - CAVEAT: JS JSON.stringify(1.0) === "1" while json.dumps(1.0) == "1.0".
-      Keep signed bodies free of float-typed integers (use int), or the
-      signature will not verify server-side.
+    - keys sorted by UTF-16 code unit like JS, not by code point
+    - lone surrogates escaped as \\udXXX like well-formed JSON.stringify
+    - CAVEAT (floats): JS JSON.stringify(1.0) === "1" while json.dumps(1.0) == "1.0";
+      exponent forms differ too (1e16, 1e-7). Keep signed bodies free of floats
+      that are integral or very large/small (use int), or the signature will not
+      verify server-side. Integers beyond 2**53 are not representable in JS at all.
+      NaN/Infinity: JS signs `null`, Python emits NaN -- never put them in a body.
     """
     if obj is None or not isinstance(obj, (dict, list)):
-        return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        return _dumps_scalar(obj)
     if isinstance(obj, list):
         return "[" + ",".join(canonicalize_body(v) for v in obj) + "]"
-    keys = sorted(obj.keys())
+    keys = sorted(obj.keys(), key=_utf16_key)
     return (
         "{"
         + ",".join(
-            json.dumps(k, ensure_ascii=False) + ":" + canonicalize_body(obj[k])
+            _dumps_scalar(k) + ":" + canonicalize_body(obj[k])
             for k in keys
         )
         + "}"
