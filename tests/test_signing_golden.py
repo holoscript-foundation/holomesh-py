@@ -17,13 +17,35 @@ from pathlib import Path
 
 import pytest
 
-from holomesh.signing import canonicalize_body
+from holomesh.signing import CanonicalizationError, canonicalize_body
 
 VECTORS_PATH = Path(__file__).parent / "golden" / "signing_vectors.json"
 VECTORS = json.loads(VECTORS_PATH.read_text(encoding="utf-8"))
 
 TEST_PRIVKEY = "0x" + "00" * 31 + "01"
 MASTER_KEY = bytes([0x42]) * 32
+
+
+FLOAT_VECTORS_NOW_REFUSED = {
+    "float-fractional-same",
+    "float-exp-1e21-same-format",
+    "float-fractional-0.1",
+}
+
+
+def _has_float(obj):
+    if isinstance(obj, float):
+        return True
+    if isinstance(obj, dict):
+        return any(_has_float(v) for v in obj.values())
+    if isinstance(obj, list):
+        return any(_has_float(v) for v in obj)
+    return False
+
+
+def test_float_vector_names_pinned():
+    found = {c["name"] for c in VECTORS["canonicalize"] if _has_float(json.loads(c["input_json"]))}
+    assert found == FLOAT_VECTORS_NOW_REFUSED
 
 
 def _ids(cases):
@@ -50,6 +72,13 @@ def test_vector_file_shape():
 @pytest.mark.parametrize("case", VECTORS["canonicalize"], ids=_ids(VECTORS["canonicalize"]))
 def test_canonicalize_matches_js(case):
     obj = json.loads(case["input_json"])
+    if _has_float(obj):
+        # Fail-closed: Python refuses every float (its formatting is not JS's), even the
+        # ones whose bytes happen to match. Pinned by name so the list cannot drift.
+        assert case["name"] in FLOAT_VECTORS_NOW_REFUSED
+        with pytest.raises(CanonicalizationError):
+            canonicalize_body(obj)
+        return
     got = canonicalize_body(obj)
     assert got == case["expected"]
     # Byte-level too: this is what actually gets signed (UTF-8 of the string).
@@ -61,15 +90,14 @@ def test_canonicalize_matches_js(case):
     VECTORS["canonicalize_float_divergences"],
     ids=_ids(VECTORS["canonicalize_float_divergences"]),
 )
-def test_float_caveat_is_known_divergence(case):
-    """Documented caveat (signing.canonicalize_body docstring): Python floats are NOT
-    byte-identical to JS numbers (JS 1.0 -> "1", Python 1.0 -> "1.0"; exponent formats
-    differ). Signed bodies must use int, never float. This test pins the divergence so
-    nobody mistakes float support for verified; if canonicalize_body is ever taught JS
-    number formatting, move these cases into the `canonicalize` list instead.
+def test_float_divergences_are_refused(case):
+    """Python floats are NOT byte-identical to JS numbers (JS 1.0 -> "1", Python 1.0 ->
+    "1.0"; exponent formats differ). These used to sign silently-different bytes; now
+    canonicalize_body refuses every float (fail closed). Send ints instead.
     """
     obj = json.loads(case["input_json"])
-    assert canonicalize_body(obj) != case["expected"]
+    with pytest.raises(CanonicalizationError):
+        canonicalize_body(obj)
 
 
 def test_int_equivalent_of_integral_float_matches_js():

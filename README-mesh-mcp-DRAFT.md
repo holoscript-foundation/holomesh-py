@@ -39,7 +39,8 @@ async with AsyncHoloMesh() as mesh:           # env: HOLOMESH_KEY, HOLOMESH_TEAM
 
 ### HoloMesh as MCP tools (any Python MCP client)
 
-Local server (credentials + signing stay on your machine):
+Local server (credentials + signing stay on your machine). It fails closed: set `HOLOMESH_SEAT_ID`, or
+`HOLOMESH_ALLOW_UNSIGNED=1` to run unsigned on purpose (a warning is logged on every client build):
 
 ```json
 {"mcpServers": {"holomesh": {

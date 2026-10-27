@@ -20,12 +20,13 @@ If the JS changes, regenerate and review the diff; a changed vector means the wi
 The signing key is `0x` + 31 zero bytes + `01`, the master key is 32 bytes of `0x42`, the AES-GCM iv is 12 bytes of `0x07`.
 They are public dummy values rebuilt by formula in the test; no real seat secret is stored here.
 
-## Float caveat
+## Floats and large ints are refused
 
 JS `JSON.stringify(1.0)` is `1`; Python `json.dumps(1.0)` is `1.0`, and exponent forms differ (`1e16`, `1e-7`).
-Signed bodies must use integers. The `canonicalize_float_divergences` vectors pin the known divergences
-(the Python test asserts they still differ, so the caveat cannot silently change). Integers above 2**53 cannot
-be represented in JS at all. `NaN`/`Infinity` serialize as `null` in JS and must never appear in a body.
+`canonicalize_body` therefore refuses every float, and every int outside +-(2**53-1), with
+`CanonicalizationError`. The `canonicalize_float_divergences` vectors and the three float vectors in
+`canonicalize` (`float-fractional-same`, `float-exp-1e21-same-format`, `float-fractional-0.1`) are kept
+as JS reference bytes; the Python tests assert they raise.
 
 ## Running
 
